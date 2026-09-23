@@ -37,11 +37,19 @@ jobs:
       - name: Deploy the stack
         run: |
           kubectl apply -f manifests/namespace.yaml
-          kubectl apply -R -f manifests/
+          kubectl apply --server-side -R -f manifests/
+
+      - name: Create the grafana-admin secret
+        run: |
+          kubectl create secret generic grafana-admin \
+            --namespace monitoring \
+            --from-literal=admin-password=smoke-test
 
       - name: Wait for rollout
         run: |
           kubectl rollout status deployment/prometheus -n monitoring --timeout=90s
+          kubectl rollout status deployment/alertmanager -n monitoring --timeout=90s
+          kubectl rollout status deployment/grafana -n monitoring --timeout=90s
           kubectl rollout status deployment/kube-state-metrics -n monitoring --timeout=90s
           kubectl rollout status daemonset/node-exporter -n monitoring --timeout=90s
 

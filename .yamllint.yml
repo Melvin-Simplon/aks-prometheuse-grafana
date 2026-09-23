@@ -1,5 +1,8 @@
 extends: default
 
+ignore: |
+  manifests/grafana/dashboard-*-configmap.yaml
+
 rules:
   document-start: disable
   line-length:
