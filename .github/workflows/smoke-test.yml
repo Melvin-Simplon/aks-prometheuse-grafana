@@ -1,0 +1,56 @@
+name: Smoke test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-to-kind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Install kubectl
+        run: |
+          VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+          curl -LO "https://dl.k8s.io/release/${VERSION}/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+
+      - name: Install kind
+        run: |
+          curl -sLo kind https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64
+          chmod +x kind
+          sudo mv kind /usr/local/bin/kind
+
+      - name: Create ephemeral cluster
+        run: kind create cluster --name smoke-test --wait 120s
+
+      - name: Deploy the stack
+        run: |
+          kubectl apply -f manifests/namespace.yaml
+          kubectl apply -R -f manifests/
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/prometheus -n monitoring --timeout=90s
+          kubectl rollout status deployment/kube-state-metrics -n monitoring --timeout=90s
+          kubectl rollout status daemonset/node-exporter -n monitoring --timeout=90s
+
+      - name: Dump state on failure
+        if: failure()
+        run: |
+          kubectl get pods -n monitoring -o wide
+          kubectl describe pods -n monitoring
+
+      - name: Delete cluster
+        if: always()
+        run: kind delete cluster --name smoke-test
