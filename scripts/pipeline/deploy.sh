@@ -7,36 +7,44 @@
 #   scripts/pipeline/deploy.sh --path argocd/root.yaml --namespace argocd --label "root Application"
 
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/pipeline/lib.sh
-source "${SCRIPT_DIR}/lib.sh"
 
-path="" label="" namespace="${NAMESPACE:-monitoring}"
+ORIGINAL_ARGS="$*"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/pipeline/lib.sh
+source "${HERE}/lib.sh"
+
+require_cmd kubectl "See https://kubernetes.io/docs/tasks/tools/"
+
+PATH_ARG='' LABEL='' NAMESPACE_ARG="${NAMESPACE:-monitoring}"
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --path) path="$2"; shift 2 ;;
-        --label) label="$2"; shift 2 ;;
-        --namespace) namespace="$2"; shift 2 ;;
+        --path) PATH_ARG="$2"; shift 2 ;;
+        --label) LABEL="$2"; shift 2 ;;
+        --namespace) NAMESPACE_ARG="$2"; shift 2 ;;
         *) die "unknown argument: $1" ;;
     esac
 done
 
-[[ -n "${path}" ]] || die "--path is required"
-[[ -n "${label}" ]] || label="${path}"
+[[ -n "${PATH_ARG}" ]] || die "usage: deploy.sh --path FILE [--label NAME] [--namespace NS]"
+[[ -n "${LABEL}" ]] || LABEL="${PATH_ARG}"
 
-if ! output="$(kubectl apply -f "${path}" -n "${namespace}" 2>&1)"; then
-    printf '%s\n' "${output}" >&2
-    die "${label}: kubectl apply failed"
+task "${LABEL}"
+
+output=""
+if ! output="$(kubectl apply -f "${PATH_ARG}" -n "${NAMESPACE_ARG}" 2>&1)"; then
+    report_failed "${LABEL}" "kubectl apply failed"
+    hint "${output}"
+    recap "${LABEL}"
+    exit 1
 fi
 
 while IFS= read -r line; do
     [[ -z "${line}" ]] && continue
     case "${line}" in
-        *" unchanged") log_ok "${line}" ;;
-        *" created" | *" configured") log_changed "${line}" ;;
-        *) log_skip "${line}" ;;
+        *" unchanged") report_ok "${LABEL}" "${line}" ;;
+        *" created" | *" configured") report_changed "${LABEL}" "${line}" ;;
+        *) report_skipped "${LABEL}" "${line}" ;;
     esac
 done <<< "${output}"
 
-print_recap "${label}"
-recap_exit_code
+recap "${LABEL}"

@@ -3,8 +3,7 @@
 # sync (prune + selfHeal, already set on every Application under
 # argocd/apps/) takes it from there. Pushing to main is the actual deploy
 # mechanism; nothing here re-applies manifests by hand or on a schedule,
-# that is exactly what ArgoCD already does on its own. This Makefile only
-# bootstraps it once and gives visibility into what it is doing.
+# that is exactly what ArgoCD already does on its own.
 
 SHELL := /usr/bin/env bash
 .SHELLFLAGS := -euo pipefail -c
@@ -20,42 +19,9 @@ LOG_FILE ?= .logs/pipeline.log
 
 PIPELINE := scripts/pipeline
 
+# Read by the scripts rather than passed as arguments: they all need the same
+# handful of values, and threading them through every call site adds noise
+# without adding clarity.
 export NAMESPACE ARGOCD_NAMESPACE LOG_FILE
 
-##@ Setup
-
-.PHONY: doctor
-doctor: ## Check every prerequisite and report what is missing
-	@$(PIPELINE)/doctor.sh
-
-##@ Deploy
-
-.PHONY: deploy
-deploy: ## Register the app-of-apps root; ArgoCD deploys and keeps in sync everything under argocd/apps/ from there
-	@$(PIPELINE)/deploy.sh --path "argocd/root.yaml" --namespace "$(ARGOCD_NAMESPACE)" --label "root Application"
-
-##@ Inspect
-
-.PHONY: status
-status: ## Show every Application's sync/health status, the pods and services
-	@$(PIPELINE)/status.sh
-
-.PHONY: logs
-logs: ## Follow the logs of one component: make logs COMPONENT=prometheus
-	@$(PIPELINE)/logs.sh --component "$(COMPONENT)"
-
-##@ Teardown
-
-.PHONY: destroy
-destroy: ## Delete the root Application, cascading to every component and everything it deployed
-	@$(PIPELINE)/destroy.sh
-
-##@ Help
-
-.PHONY: lint
-lint: ## Run shellcheck over the scripts
-	@shellcheck -x $(PIPELINE)/*.sh && echo "shellcheck: clean"
-
-.PHONY: help
-help: ## Print this help
-	@$(PIPELINE)/help.sh
+include makefiles/common.mk
