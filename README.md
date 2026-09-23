@@ -1,11 +1,6 @@
 <br/>
 
 <p align="center">
-  <a href="https://github.com/Melvin-Simplon"><img src="https://github.com/Melvin-Simplon.png" width="72" alt="Melvin-Simplon" /></a>
-  <a href="https://github.com/bambstk"><img src="https://github.com/bambstk.png" width="72" alt="bambstk" /></a>
-</p>
-
-<p align="center">
   <img src="https://skillicons.dev/icons?i=kubernetes,prometheus,grafana,azure,githubactions&perline=5" alt="Kubernetes, Prometheus, Grafana, Azure, GitHub Actions" />
 </p>
 
@@ -13,6 +8,11 @@
 
 <p align="center">
   <i>Prometheus, Alertmanager and Grafana deployed on AKS with raw Kubernetes manifests, no Helm chart, no operator, kept in sync by ArgoCD</i>
+</p>
+
+<p align="center">
+  <a href="https://github.com/WhiteMuush"><img src="https://github.com/WhiteMuush.png" width="56" alt="WhiteMuush" /></a>
+  <a href="https://github.com/bambstk"><img src="https://github.com/bambstk.png" width="56" alt="bambstk" /></a>
 </p>
 
 <br/>
