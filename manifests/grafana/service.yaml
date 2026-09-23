@@ -12,3 +12,7 @@ spec:
     - port: 80
       targetPort: 3000
   type: LoadBalancer
+  # Azure's cloud provider turns this into an NSG rule restricting inbound
+  # traffic to the LoadBalancer to these ranges only.
+  loadBalancerSourceRanges:
+    - 86.201.70.133/32
