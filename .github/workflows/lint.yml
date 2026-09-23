@@ -1,0 +1,43 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Install yamllint
+        run: pip install --break-system-packages yamllint
+
+      - name: Lint YAML style
+        run: yamllint -c .yamllint.yml manifests/ .github/
+
+  kubeconform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Install kubeconform
+        run: |
+          curl -sLo kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz
+          tar -xzf kubeconform.tar.gz kubeconform
+          sudo mv kubeconform /usr/local/bin/kubeconform
+
+      - name: Validate manifests against Kubernetes schema
+        run: find manifests -name "*.yaml" -print0 | xargs -0 kubeconform -summary -strict

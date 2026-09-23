@@ -19,6 +19,12 @@ spec:
       tolerations:
         - effect: NoSchedule
           operator: Exists
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: node-exporter
           image: prom/node-exporter:v1.9.0
@@ -27,6 +33,11 @@ spec:
           ports:
             - containerPort: 9100
               protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
             - name: rootfs
               mountPath: /host
