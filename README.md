@@ -10,6 +10,8 @@
   <i>Prometheus, Alertmanager and Grafana deployed on AKS with raw Kubernetes manifests, no Helm chart, no operator, kept in sync by ArgoCD</i>
 </p>
 
+<p align="center"><sub>Contributors</sub></p>
+
 <p align="center">
   <a href="https://github.com/WhiteMuush"><img src="https://github.com/WhiteMuush.png" width="56" alt="WhiteMuush" /></a>
   <a href="https://github.com/bambstk"><img src="https://github.com/bambstk.png" width="56" alt="bambstk" /></a>
