@@ -47,6 +47,8 @@ spec:
               mountPath: /var/lib/grafana
             - name: tmp
               mountPath: /tmp
+            - name: plugins-bundled
+              mountPath: /usr/share/grafana/data/plugins-bundled
       volumes:
         - name: datasources
           configMap:
@@ -54,4 +56,6 @@ spec:
         - name: data
           emptyDir: {}
         - name: tmp
+          emptyDir: {}
+        - name: plugins-bundled
           emptyDir: {}
