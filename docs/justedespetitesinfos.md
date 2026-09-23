@@ -17,7 +17,7 @@ Ok et pour le dest-serv c'est le cluster sur lequel on deploie les app et `https
 
 pour que les commandes argoCD fonctionnent faut pas oublier de changer le contexte de ns par defaut `kubectl config set-context --current --namespace argocd`  
 
-une fois que l'app est crée on peut voir son status avec `argocd app get guestbook` si c'est pas ync on peut sync avec `argocd app sync guestbook`
+une fois que l'app est crée on peut voir son status avec `argocd app get <nomdelapp>` si c'est pas ync on peut sync avec `argocd app sync <nomdelapp>`
 
 ## l'appli, l'observabilité etc
 
