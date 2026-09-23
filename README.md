@@ -57,18 +57,8 @@ make deploy
 
 There is no "redeploy" target. `make deploy` only registers the root once; from there, changing a manifest and pushing is the whole workflow.
 
-<br/>
-
----
-
-<br/>
-
-## The Makefile
-
-[`Makefile`](Makefile) and [`scripts/pipeline/`](scripts/pipeline) report in the vocabulary of Ansible: `ok`, `changed`, `skipping`, `unreachable`, `fatal`, so a second run proves idempotence instead of just claiming it.
-
 <p align="center">
-  <img src="docs/images/makefile-help.png" width="760" alt="make help output" />
+  <img src="docs/images/argocd-applications.png" width="760" alt="ArgoCD Applications list" />
 </p>
 
 <br/>
@@ -99,6 +89,20 @@ Grafana's Prometheus datasource is provisioned as code, not clicked together, se
 
 <p align="center">
   <img src="docs/images/grafana-dashboard.png" width="760" alt="Node Exporter Full dashboard in Grafana" />
+</p>
+
+<br/>
+
+---
+
+<br/>
+
+## The Makefile
+
+[`Makefile`](Makefile) and [`scripts/pipeline/`](scripts/pipeline) report in the vocabulary of Ansible: `ok`, `changed`, `skipping`, `unreachable`, `fatal`, so a second run proves idempotence instead of just claiming it.
+
+<p align="center">
+  <img src="docs/images/makefile-help.png" width="760" alt="make help output" />
 </p>
 
 <br/>
