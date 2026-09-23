@@ -1,20 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring
+  name: alertmanager
   namespace: argocd
   finalizers:
-    # Without this, deleting the Application only removes the registration
-    # and leaves everything it deployed behind, orphaned in the cluster.
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://github.com/Melvin-Simplon/aks-prometheuse-grafana.git
     targetRevision: main
-    path: manifests
-    directory:
-      recurse: true
+    path: manifests/alertmanager
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

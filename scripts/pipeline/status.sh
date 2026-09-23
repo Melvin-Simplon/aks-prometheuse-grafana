@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-# Shows the ArgoCD Application's sync/health status, then what it manages:
-# pods, services, and the Grafana external IP once assigned.
+# Shows every ArgoCD Application's sync/health status, then what they
+# manage: pods, services, and the Grafana external IP once assigned.
 
 set -euo pipefail
 NAMESPACE="${NAMESPACE:-monitoring}"
 ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-argocd}"
-ARGOCD_APP="${ARGOCD_APP:-monitoring}"
 
-echo "ArgoCD Application:"
-kubectl get application "${ARGOCD_APP}" -n "${ARGOCD_NAMESPACE}" \
+echo "ArgoCD Applications:"
+kubectl get applications -n "${ARGOCD_NAMESPACE}" \
     -o custom-columns=NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status \
-    2> /dev/null || echo "  not registered yet, run 'make app'"
+    2> /dev/null || echo "  none registered yet, run 'make root'"
 echo
 echo "Pods:"
 kubectl get pods -n "${NAMESPACE}" -o wide

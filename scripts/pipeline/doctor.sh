@@ -9,7 +9,6 @@ source "${SCRIPT_DIR}/lib.sh"
 
 NAMESPACE="${NAMESPACE:-monitoring}"
 ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-argocd}"
-ARGOCD_APP="${ARGOCD_APP:-monitoring}"
 
 if command -v kubectl > /dev/null 2>&1; then
     log_ok "kubectl is installed"
@@ -33,14 +32,16 @@ fi
 if command -v argocd > /dev/null 2>&1; then
     log_ok "argocd CLI is installed"
 else
-    log_skip "argocd CLI is not installed, 'make sync' and 'make diff' will fail"
+    log_skip "argocd CLI is not installed, every 'make <component>' sync target will fail"
 fi
 
-if kubectl get application "${ARGOCD_APP}" -n "${ARGOCD_NAMESPACE}" > /dev/null 2>&1; then
-    log_ok "ArgoCD Application ${ARGOCD_APP} exists"
-else
-    log_skip "ArgoCD Application ${ARGOCD_APP} does not exist yet, run 'make app'"
-fi
+for app in prometheus alertmanager grafana node-exporter kube-state-metrics; do
+    if kubectl get application "${app}" -n "${ARGOCD_NAMESPACE}" > /dev/null 2>&1; then
+        log_ok "${app} Application exists"
+    else
+        log_skip "${app} Application does not exist yet, 'make ${app}' will fail until it is registered in ArgoCD"
+    fi
+done
 
 if kubectl get secret grafana-admin -n "${NAMESPACE}" > /dev/null 2>&1; then
     log_ok "grafana-admin secret exists"
