@@ -68,24 +68,8 @@ print_targets() {
   ' "$@"
 }
 
-# Quoted heredoc, so the block art survives untouched.
-banner_art() {
-    cat << 'BANNER'
-┌───────────────┐
-│   ▁▃▅▇█▇▅▃▁   │
-│  Prometheus   │
-│   + Grafana   │
-│   + Argo CD   │
-└───────────────┘
-BANNER
-}
-
-# Every line of the art is exactly this wide.
-BANNER_WIDTH=17
-BANNER_GAP=2
-
-# The header beside the art, as colour and text pairs. Wrapped here rather than
-# written pre-wrapped, so it still reads on a narrow terminal.
+# The header, as colour and text pairs. Wrapped here rather than written
+# pre-wrapped, so it still reads on a narrow terminal.
 header_lines() {
     local width="$1"
     local -a pairs=(
@@ -111,42 +95,11 @@ header_lines() {
     done
 }
 
-# The art on the left, the header on the right, the shorter of the two centred
-# against the taller. Falls back to stacking when the terminal cannot hold both,
-# rather than wrapping the art into itself.
+# Left-aligned, full width, no art column.
 print_header() {
     local cols; cols=$(tput cols 2> /dev/null || echo 80)
-    local avail=$((cols - BANNER_WIDTH - BANNER_GAP))
-
-    mapfile -t art < <(banner_art)
-
-    if [[ "${avail}" -lt 32 ]]; then
-        printf '\033[1;%sm\n' "${BANNER_COLOR}"
-        printf '%s\n' "${art[@]}"
-        printf '\033[0m\n'
-        header_lines "$((cols > 32 ? cols : 32))"
-        return
-    fi
-
-    mapfile -t text < <(header_lines "${avail}")
-
-    local rows=$((${#art[@]} > ${#text[@]} ? ${#art[@]} : ${#text[@]}))
-    local offset=$(((${#art[@]} - ${#text[@]}) / 2))
-    [[ "${offset}" -lt 0 ]] && offset=0
-
-    local i left right pad
     echo
-    for ((i = 0; i < rows; i++)); do
-        left="${art[i]:-}"
-        right=""
-        [[ "${i}" -ge "${offset}" ]] && right="${text[i - offset]:-}"
-
-        pad=$((BANNER_WIDTH - ${#left} + BANNER_GAP))
-        [[ "${pad}" -lt 1 ]] && pad=1
-
-        printf '\033[1;%sm%s\033[0m%*s%s\n' \
-            "${BANNER_COLOR}" "${left}" "${pad}" '' "${right}"
-    done
+    header_lines "${cols}"
     echo
 }
 
