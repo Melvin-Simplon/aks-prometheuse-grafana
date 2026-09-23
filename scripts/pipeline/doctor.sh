@@ -29,17 +29,17 @@ else
     log_fatal "ArgoCD namespace ${ARGOCD_NAMESPACE} does not exist, install ArgoCD first"
 fi
 
-if command -v argocd > /dev/null 2>&1; then
-    log_ok "argocd CLI is installed"
+if kubectl get application root -n "${ARGOCD_NAMESPACE}" > /dev/null 2>&1; then
+    log_ok "root Application exists"
 else
-    log_skip "argocd CLI is not installed, every 'make <component>' sync target will fail"
+    log_skip "root Application does not exist yet, run 'make deploy'"
 fi
 
 for app in prometheus alertmanager grafana node-exporter kube-state-metrics; do
     if kubectl get application "${app}" -n "${ARGOCD_NAMESPACE}" > /dev/null 2>&1; then
         log_ok "${app} Application exists"
     else
-        log_skip "${app} Application does not exist yet, 'make ${app}' will fail until it is registered in ArgoCD"
+        log_skip "${app} Application does not exist yet, ArgoCD creates it once 'make deploy' has run"
     fi
 done
 

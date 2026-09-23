@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Prints the help: collects every target and section from the Makefile and
-# its includes, then groups by section, so a section declared in more than
-# one file (##@ Deploy shows up in every component fragment) prints once.
+# Prints the help: collects every target and section from the Makefile,
+# then groups by section.
 
 set -euo pipefail
 
-files=(Makefile makefiles/*.mk)
+files=(Makefile)
 
 bold="" cyan="" reset=""
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
