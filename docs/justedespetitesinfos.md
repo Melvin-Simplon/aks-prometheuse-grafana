@@ -23,7 +23,7 @@ une fois que l'app est crée on peut voir son status avec `argocd app get <nomde
 
 pour avoir acces à l'UI web de argoCD on met le loadbalencer du service argoCD comme ça : `kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'`  
 puis quand l'ip est dispo (on peut la voir comme ça : ` kubectl get svc argocd-server -n argocd -w`)  
-on y accède avec https://<IP> on se connecte avec user: `admin`, et on peut trouver le mot de passe comme ça `ubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d` (le mot de passe est généré aléatoirement)
+on y accède avec https://<IP> on se connecte avec user: `admin`, et on peut trouver le mot de passe comme ça `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d` (le mot de passe est généré aléatoirement)
 
 ## l'appli, l'observabilité etc
 
