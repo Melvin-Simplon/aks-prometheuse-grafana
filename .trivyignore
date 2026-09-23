@@ -1,0 +1,12 @@
+# node-exporter needs host-level access to read machine metrics (CPU, disk, network
+# at the node level). These findings are inherent to what node-exporter does and are
+# accepted here, not fixable without breaking the exporter's purpose.
+
+# DaemonSet 'node-exporter' should not set 'spec.template.spec.hostNetwork' to true
+KSV-0009
+
+# DaemonSet 'node-exporter' should not set 'spec.template.spec.hostPID' to true
+KSV-0010
+
+# daemonset node-exporter shouldn't have volumes set to {"/"}
+KSV-0121
