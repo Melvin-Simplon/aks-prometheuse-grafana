@@ -49,6 +49,10 @@ spec:
               mountPath: /tmp
             - name: plugins-bundled
               mountPath: /usr/share/grafana/data/plugins-bundled
+            - name: dashboards-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboard-nodes
+              mountPath: /etc/grafana/dashboards
       volumes:
         - name: datasources
           configMap:
@@ -59,3 +63,9 @@ spec:
           emptyDir: {}
         - name: plugins-bundled
           emptyDir: {}
+        - name: dashboards-provider
+          configMap:
+            name: grafana-dashboards-provider
+        - name: dashboard-nodes
+          configMap:
+            name: grafana-dashboard-nodes
