@@ -1,40 +1,118 @@
 #!/usr/bin/env bash
-# Prints the help: collects every target and section from the Makefile and
-# its includes, then groups by section, so a section declared in more than
-# one file (##@ Deploy shows up in every component fragment) prints once.
+# Print the Makefile targets, grouped and coloured by the ##@ section markers.
 
 set -euo pipefail
 
-files=(Makefile makefiles/*.mk)
+# shellcheck source=scripts/pipeline/lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-bold="" cyan="" reset=""
-if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
-    bold=$'\033[1m'; cyan=$'\033[36m'; reset=$'\033[0m'
-fi
+# One colour per section. Unlisted sections fall back to DEFAULT_COLOR.
+SECTION_COLORS="Setup=38;5;220,Deploy=38;5;170,Inspect=38;5;39,Teardown=38;5;196,Help=38;5;80"
+DEFAULT_COLOR="38;5;80"
+BANNER_COLOR="38;5;141"
+HEADER_COLOR="38;5;208"
+WARNING_COLOR="38;5;196"
 
-echo "Usage: make <target>"
-
-awk -v bold="${bold}" -v cyan="${cyan}" -v reset="${reset}" '
-/^##@/ {
-    section = substr($0, 5)
-    if (!(section in seen)) { order[++n] = section; seen[section] = 1 }
-    next
+# Sections follow the include order of the Makefile, not the alphabet.
+# Includes that do not resolve to a readable file are skipped, so a conditional
+# include never breaks the help.
+makefiles() {
+    printf '%s\n' "${PROJECT_ROOT}/Makefile"
+    awk '/^include /{print $2}' "${PROJECT_ROOT}/Makefile" |
+        while read -r rel; do
+            [[ -f "${PROJECT_ROOT}/${rel}" ]] && printf '%s\n' "${PROJECT_ROOT}/${rel}"
+        done
 }
-/^[a-zA-Z0-9_-]+:.*## / {
-    colon = index($0, ":")
-    target = substr($0, 1, colon - 1)
-    rest = substr($0, colon + 1)
-    marker = index(rest, "## ")
-    desc = substr(rest, marker + 3)
-    body[section] = body[section] sprintf("  %s%-20s%s %s\n", cyan, target, reset, desc)
-}
-END {
-    for (i = 1; i <= n; i++) {
-        s = order[i]
-        if (!(s in body)) { continue }
-        printf "\n%s%s%s\n", bold, s, reset
-        printf "%s", body[s]
+
+# Targets are collected and grouped, not printed as they are read: a section is
+# declared in whichever fragment happens to own a target, so the same section
+# appears in several files and printing in file order would repeat its header.
+# SECTION_COLORS drives both the colour and the display order, so the sections
+# read in a deliberate order rather than in the include order of the Makefile.
+print_targets() {
+    awk -v colors="$SECTION_COLORS" -v fallback="$DEFAULT_COLOR" '
+    BEGIN {
+      ordered = split(colors, pairs, ",")
+      for (i = 1; i <= ordered; i++) {
+        split(pairs[i], kv, "=")
+        color[kv[1]] = kv[2]
+        rank[kv[1]] = i
+        listed[i] = kv[1]
+      }
+      section = "Other"
     }
+    /^##@ / {
+      section = substr($0, 5)
+      if (!(section in seen)) { seen[section] = ++extras; extra[extras] = section }
+      next
+    }
+    /^[a-z][a-z0-9-]*:.*## / {
+      colon = index($0, ":")
+      target = substr($0, 1, colon - 1)
+      rest = substr($0, colon + 1)
+      marker = index(rest, "## ")
+      desc = substr(rest, marker + 3)
+      if (!(section in seen)) { seen[section] = ++extras; extra[extras] = section }
+      body[section] = body[section] sprintf("  \033[%sm%-16s\033[0m %s\n", \
+        (section in color) ? color[section] : fallback, target, desc)
+    }
+    END {
+      for (i = 1; i <= ordered; i++) show(listed[i])
+      for (i = 1; i <= extras; i++) if (!(extra[i] in rank)) show(extra[i])
+    }
+    function show(name) {
+      if (name == "" || body[name] == "") return
+      printf "\n\033[1;%sm%s\033[0m\n", (name in color) ? color[name] : fallback, name
+      printf "%s", body[name]
+    }
+  ' "$@"
 }
-' "${files[@]}"
-echo
+
+# The header, as colour and text pairs. Wrapped here rather than written
+# pre-wrapped, so it still reads on a narrow terminal.
+header_lines() {
+    local width="$1"
+    local -a pairs=(
+        "${BANNER_COLOR}|aks-prometheuse-grafana, ArgoCD deploy control"
+        "|"
+        "${HEADER_COLOR}|Usage: make <target> [VAR=value]"
+        "${HEADER_COLOR}|The only target that touches the cluster is 'deploy': it registers the app-of-apps root, ArgoCD syncs every component on its own from there."
+        "${HEADER_COLOR}|Override a variable on the command line, not through the environment."
+        "${HEADER_COLOR}|Every run appends to ${LOG_FILE:-.logs/pipeline.log}, timestamped and without colours."
+    )
+
+    local pair colour text line
+    for pair in "${pairs[@]}"; do
+        colour="${pair%%|*}"
+        text="${pair#*|}"
+        if [[ -z "${text}" ]]; then
+            printf '\n'
+            continue
+        fi
+        while IFS= read -r line; do
+            printf '\033[%sm%s\033[0m\n' "${colour:-0}" "${line}"
+        done < <(printf '%s\n' "${text}" | fold -s -w "${width}")
+    done
+}
+
+# Left-aligned, full width, no art column.
+print_header() {
+    local cols; cols=$(tput cols 2> /dev/null || echo 80)
+    echo
+    header_lines "${cols}"
+    echo
+}
+
+say() { printf '\033[%sm%s\033[0m\n' "$1" "$2"; }
+
+main() {
+    # Only when a human is watching: clearing breaks a pipe and litters a CI log.
+    [[ -t 1 ]] && clear
+    print_header
+    say "1;$WARNING_COLOR" "⚠️  destroy tears down the whole stack, and nothing is protected any more"
+    mapfile -t files < <(makefiles)
+    print_targets "${files[@]}"
+    echo
+}
+
+main "$@"

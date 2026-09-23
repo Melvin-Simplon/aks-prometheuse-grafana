@@ -1,7 +1,9 @@
-# Drives the monitoring stack through ArgoCD. Every per-component target
-# forces an immediate sync of that component's Application instead of
-# waiting for ArgoCD's next automated reconcile. This assumes both ArgoCD
-# and every Application it manages already exist on the cluster.
+# One command turns a bare ArgoCD install into the whole monitoring stack:
+# 'make deploy' registers the app-of-apps root, and ArgoCD's own automated
+# sync (prune + selfHeal, already set on every Application under
+# argocd/apps/) takes it from there. Pushing to main is the actual deploy
+# mechanism; nothing here re-applies manifests by hand or on a schedule,
+# that is exactly what ArgoCD already does on its own.
 
 SHELL := /usr/bin/env bash
 .SHELLFLAGS := -euo pipefail -c
@@ -22,9 +24,4 @@ PIPELINE := scripts/pipeline
 # without adding clarity.
 export NAMESPACE ARGOCD_NAMESPACE LOG_FILE
 
-include makefiles/component.mk
-include makefiles/prometheus.mk
-include makefiles/alertmanager.mk
-include makefiles/grafana.mk
-include makefiles/exporters.mk
 include makefiles/common.mk

@@ -1,4 +1,7 @@
-# Everything not tied to one component: checks, orchestration, teardown, help.
+# Everything the Makefile does: bootstrap, checks, teardown, help. One
+# fragment is enough for now, there is no per-component logic left to split
+# out, ArgoCD already handles every component on its own once the root is
+# registered.
 
 ##@ Setup
 
@@ -8,16 +11,9 @@ doctor: ## Check every prerequisite and report what is missing
 
 ##@ Deploy
 
-# Sequential through recursive make rather than a prerequisite list: make is
-# free to reorder prerequisites. Prometheus and Alertmanager go first so
-# Grafana's dashboards have data as soon as it starts, instead of a few
-# minutes of "no data" while they catch up.
 .PHONY: deploy
-deploy: ## Sync every component now: prometheus, alertmanager, exporters, grafana
-	@$(MAKE) prometheus
-	@$(MAKE) alertmanager
-	@$(MAKE) exporters
-	@$(MAKE) grafana
+deploy: ## Register the app-of-apps root; ArgoCD deploys and keeps in sync everything under argocd/apps/ from there
+	@$(PIPELINE)/deploy.sh --path "argocd/root.yaml" --namespace "$(ARGOCD_NAMESPACE)" --label "root Application"
 
 ##@ Inspect
 
@@ -32,7 +28,7 @@ logs: ## Follow the logs of one component: make logs COMPONENT=prometheus
 ##@ Teardown
 
 .PHONY: destroy
-destroy: ## Delete the grafana and alertmanager Applications and everything they deployed
+destroy: ## Delete the root Application, cascading to every component and everything it deployed
 	@$(PIPELINE)/destroy.sh
 
 ##@ Help
