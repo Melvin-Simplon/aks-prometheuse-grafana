@@ -20,11 +20,23 @@ done
 
 [[ -n "${app}" ]] || die "--app is required"
 
-if ! kubectl get application "${app}" -n "${ARGOCD_NAMESPACE:-argocd}" > /dev/null 2>&1; then
-    die "${app}: ArgoCD Application not found, run 'make root' first"
+ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-argocd}"
+
+if ! kubectl get application "${app}" -n "${ARGOCD_NAMESPACE}" > /dev/null 2>&1; then
+    die "${app}: ArgoCD Application not found in namespace ${ARGOCD_NAMESPACE}"
 fi
 
-if output="$(argocd app sync "${app}" 2>&1)"; then
+# `argocd --core` talks to Kubernetes directly instead of the ArgoCD API
+# server, but it looks up argocd-cm in the kubeconfig context's current
+# namespace rather than accepting one as a flag. Switch to it for this one
+# call only, and always restore whatever was there before, even on failure.
+previous_ns="$(kubectl config view --minify -o jsonpath='{..namespace}' 2> /dev/null || true)"
+restore_ns() { kubectl config set-context --current --namespace="${previous_ns}" > /dev/null 2>&1 || true; }
+trap restore_ns EXIT
+
+kubectl config set-context --current --namespace="${ARGOCD_NAMESPACE}" > /dev/null
+
+if output="$(argocd app sync "${app}" --core 2>&1)"; then
     log_changed "${app}: synced"
 else
     printf '%s\n' "${output}" >&2
