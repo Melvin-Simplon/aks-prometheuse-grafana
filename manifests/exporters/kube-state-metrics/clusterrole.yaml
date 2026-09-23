@@ -16,7 +16,6 @@ rules:
       - pods
       - replicationcontrollers
       - resourcequotas
-      - secrets
       - services
     verbs: ["list", "watch"]
   - apiGroups: ["apps"]
